@@ -7,20 +7,20 @@ st.set_page_config(
 )
 
 main_page = st.Page(
-    "main_dashboard-Copy.py",
+    "main_dashboard - Copy.py",
     title="Registrations",
     icon="📊",
     default=True
 )
 
 fuel_page = st.Page(
-    "fuel_analysis-Copy.py",
+    "fuel_analysis - Copy.py",
     title="Fuel Analysis",
     icon="⛽"
 )
 
 more_page = st.Page(
-    "more_analysis-Copy.py",
+    "more_analysis - Copy.py",
     title="More Analysis",
     icon="🔍"
 )
