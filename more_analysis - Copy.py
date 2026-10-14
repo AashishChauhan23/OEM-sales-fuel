@@ -23,10 +23,10 @@ st.title("🚗 Maker Fuel Dashboard")
 # ============================================================
 
 file_path = Path(
-    r"C:\Users\866083\OneDrive - Maruti Suzuki India Limited\Desktop\Combined_maker_fuel.xlsx"
+    "Combined_maker_fuel.xlsx"
 )
 geojson_path = Path(
-    r"C:\Users\866083\OneDrive - Maruti Suzuki India Limited\Desktop\india.geojson"
+    "india.geojson"
 )
 
 
