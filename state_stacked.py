@@ -1,76 +1,149 @@
+import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# ===========================
-# READ FILE
-# ===========================
+st.set_page_config(layout="wide")
 
-file_path = "Combined_maker_fuel.xlsx"  # change to your file
+st.title("State-wise Fuel Mix (100% Stacked)")
 
-df = pd.read_excel(file_path)
+# ------------------
+# LOAD DATA
+# ------------------
 
-# ===========================
-# REMOVE MAKER DIMENSION
-# ===========================
+FILE_PATH = "Combined_maker_fuel.xlsx"   # change filename
 
-month_cols = [col for col in df.columns
-              if col not in ["Maker", "Fuel", "State"]]
+df = pd.read_excel(FILE_PATH)
 
-# Sum across makers
-df_agg = (
-    df.groupby(["Fuel", "State"])[month_cols]
-      .sum()
-      .reset_index()
+# ------------------
+# FIND MONTH COLUMNS
+# ------------------
+
+meta_cols = ["Maker", "Fuel", "State"]
+
+month_cols = [col for col in df.columns if col not in meta_cols]
+
+# ------------------
+# STATE SELECTION
+# ------------------
+
+states = sorted(df["State"].dropna().unique())
+
+selected_state = st.selectbox(
+    "Select State",
+    states
 )
 
-# ===========================
-# CONVERT WIDE TO LONG
-# ===========================
+# ------------------
+# FILTER STATE
+# ------------------
 
-long_df = df_agg.melt(
-    id_vars=["Fuel", "State"],
+state_df = df[df["State"] == selected_state].copy()
+
+# ------------------
+# IGNORE MAKER
+# ------------------
+
+agg_df = (
+    state_df
+    .groupby("Fuel")[month_cols]
+    .sum()
+    .reset_index()
+)
+
+# ------------------
+# WIDE TO LONG
+# ------------------
+
+long_df = agg_df.melt(
+    id_vars="Fuel",
     value_vars=month_cols,
     var_name="Month",
     value_name="Sales"
 )
 
-# ===========================
-# CALCULATE PERCENT SHARE
-# ===========================
+# ------------------
+# REMOVE ZERO TOTAL MONTHS
+# ------------------
 
-long_df["Total"] = (
-    long_df.groupby(["State", "Month"])["Sales"]
-           .transform("sum")
+monthly_total = (
+    long_df.groupby("Month")["Sales"]
+    .transform("sum")
 )
 
+long_df = long_df[monthly_total > 0]
+
+# ------------------
+# CALCULATE SHARE
+# ------------------
+
 long_df["Share"] = (
-    long_df["Sales"] /
-    long_df["Total"]
-) * 100
+    long_df.groupby("Month")["Sales"]
+    .transform(lambda x: (x / x.sum()) * 100)
+)
 
-# remove zero-total months
-long_df = long_df[long_df["Total"] > 0]
+# ------------------
+# SORT MONTHS
+# ------------------
 
-# ===========================
-# 100% STACKED CHART
-# ===========================
+try:
+    long_df["MonthSort"] = pd.to_datetime(
+        long_df["Month"],
+        format="%Y-%b"
+    )
+
+    long_df = long_df.sort_values("MonthSort")
+
+except Exception:
+    pass
+
+# ------------------
+# CHART
+# ------------------
 
 fig = px.bar(
     long_df,
     x="Month",
     y="Share",
     color="Fuel",
-    animation_frame="State",
-    title="Fuel Mix by State (100% Stacked)",
+    title=f"Fuel Mix (%) - {selected_state}",
+    labels={
+        "Share": "Share (%)",
+        "Month": "Month"
+    }
 )
 
 fig.update_layout(
     barmode="stack",
-    yaxis_title="Fuel Share (%)",
-    xaxis_title="Month",
-    yaxis=dict(range=[0, 100]),
     height=700,
-    width=1400,
+    legend_title="Fuel Type"
 )
 
-fig.show()
+fig.update_yaxes(
+    range=[0, 100],
+    ticksuffix="%"
+)
+
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
+
+# ------------------
+# OPTIONAL DATA TABLE
+# ------------------
+
+with st.expander("View Data"):
+    pivot_table = (
+        long_df.pivot(
+            index="Month",
+            columns="Fuel",
+            values="Share"
+        )
+        .fillna(0)
+        .round(2)
+    )
+
+    st.dataframe(
+        pivot_table,
+        use_container_width=True
+    )
