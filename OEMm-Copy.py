@@ -25,6 +25,11 @@ more_page = st.Page(
     icon="🔍"
 )
 
+state_stacked = st.Page(
+    "state_stacked.py",
+    title="State fuel mix Analysis",
+    icon="🔍"
+)
 
 
 
@@ -32,7 +37,8 @@ navigation = st.navigation(
     [
         main_page,
         fuel_page,
-        more_page
+        more_page,
+        state-stacked
     ],
     position="top"
 )
