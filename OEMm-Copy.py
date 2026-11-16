@@ -38,7 +38,7 @@ navigation = st.navigation(
         main_page,
         fuel_page,
         more_page,
-        state-stacked
+        state_stacked
     ],
     position="top"
 )
